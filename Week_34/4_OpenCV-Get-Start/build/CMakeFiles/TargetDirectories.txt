@@ -1,0 +1,3 @@
+/home/async25/Desktop/RMtrain/Week_34/4_OpenCV-Get-Start/build/CMakeFiles/main.dir
+/home/async25/Desktop/RMtrain/Week_34/4_OpenCV-Get-Start/build/CMakeFiles/edit_cache.dir
+/home/async25/Desktop/RMtrain/Week_34/4_OpenCV-Get-Start/build/CMakeFiles/rebuild_cache.dir
