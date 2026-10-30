@@ -11,10 +11,10 @@ RMtrain/
 	│	├── CMakeLists.txt
 	│	├── main.cpp
 	│	└── build/
-	├── 2_String/				# 字符串处理(未完成)
+	├── 2_String/				# 字符串处理
 	│	├── CMakeLists.txt
 	│	└── main.cpp
-	├── 3_Class/				# 类与对象进阶(未完成)
+	├── 3_Class/				# 类与对象进阶
 	├── 4_OpenCV-Get-Start/			# OpenCV 入门程序
 	│	├── CMakeLists.txt
 	│	├── main.cpp
