@@ -96,16 +96,16 @@ int main(void)
 /**************************************************************************/
 
         std::vector<LightBar> pairedLightBars;
-        for (size_t j = 0; j < lightBars.size(); ++j)
+        for (size_t m = 0; m < lightBars.size(); ++m)
         {
             bool hasNeighbor = false;
             for (size_t k = 0; k < lightBars.size(); ++k)
             {
-                if (j == k) continue;
+                if (m == k) continue;
                 
                 //中心距离过滤
-                float centerDistance = cv::norm(lightBars[j].center - lightBars[k].center);
-                float averageHeight = (lightBars[j].height + lightBars[k].height) * 0.5f;
+                float centerDistance = cv::norm(lightBars[m].center - lightBars[k].center);
+                float averageHeight = (lightBars[m].height + lightBars[k].height) * 0.5f;
                 if (centerDistance <= 5.0f * averageHeight && centerDistance >= 0.8f * averageHeight)
                 {
                     hasNeighbor = true;
@@ -115,7 +115,7 @@ int main(void)
 
             if (hasNeighbor)
             {
-                pairedLightBars.push_back(lightBars[j]);
+                pairedLightBars.push_back(lightBars[m]);
             }
         }
         lightBars = pairedLightBars;

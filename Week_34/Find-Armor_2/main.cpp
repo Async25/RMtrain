@@ -69,28 +69,12 @@ int main(void)
         cv::findContours(open, contours, 0, 2, cv::Point());
 
         img.copyTo(imt_test);
+        std::vector<LightBar> lightBars;
 
         for (int j=0 ; j<contours.size() ; j++)
         {
             cv::RotatedRect rect = cv::minAreaRect(contours[j]);
-            Point2f points[4];
-            rect.points(points);
-            Point2f cpt = rect.center;
 
-            for (int i=0 ; i<4 ; i++)
-            {
-                if (i==3)
-                {
-                    cv::line(imt_test, points[i], points[0], cv::Scalar(0, 255, 0), 2, 8, 0);
-                    break;
-                }
-                cv::line(imt_test, points[i], points[i+1], cv::Scalar(0, 255, 0), 2, 8, 0);
-            }
-            cv::circle(imt_test, cpt, 2, cv::Scalar(255, 0, 0), 2, 8, 0);
-        }
-        /********************
-        for(int j=0; j<contours.size(); j++)
-        {
             uint8_t flag = 0;
 
             //修正长宽判断
@@ -126,35 +110,49 @@ int main(void)
             lightBar.area = area;
             rect.points(lightBar.points);
             lightBars.push_back(lightBar);
-        }
 
-        std::vector<LightBar> pairedLightBars;
-        for (size_t j = 0; j < lightBars.size(); ++j)
-        {
-            bool hasNeighbor = false;
-            for (size_t k = 0; k < lightBars.size(); ++k)
+            // std::vector<LightBar> pairedLightBars;
+
+            // for (size_t m = 0; m < lightBars.size(); ++m)
+            // {
+            //     bool hasNeighbor = false;
+            //     for (size_t k = 0; k < lightBars.size(); ++k)
+            //     {
+            //         if (m == k) continue;
+                    
+            //         //中心距离过滤
+            //         float centerDistance = cv::norm(lightBars[m].center - lightBars[k].center);
+            //         float averageHeight = (lightBars[m].height + lightBars[k].height) * 0.5f;
+            //         if (centerDistance <= 5.0f * averageHeight && centerDistance >= 0.8f * averageHeight)
+            //         {
+            //             hasNeighbor = true;
+            //             break;
+            //         }
+            //     }
+
+            //     if (hasNeighbor)
+            //     {
+            //         pairedLightBars.push_back(lightBars[m]);
+            //     }
+            // }
+            // lightBars = pairedLightBars;
+
+            for (const LightBar& lightBar : lightBars)
             {
-                if (j == k) continue;
-                
-                //中心距离过滤
-                float centerDistance = cv::norm(lightBars[j].center - lightBars[k].center);
-                float averageHeight = (lightBars[j].height + lightBars[k].height) * 0.5f;
-                if (centerDistance <= 5.0f * averageHeight && centerDistance >= 0.8f * averageHeight)
+                for (int n=0 ; n<4 ; n++)
                 {
-                    hasNeighbor = true;
-                    break;
+                    if (n==3)
+                    {
+                        cv::line(imt_test, lightBar.points[n], lightBar.points[0], cv::Scalar(0, 255, 0), 2, 8, 0);
+                        break;
+                    }
+                    cv::line(imt_test, lightBar.points[n], lightBar.points[n+1], cv::Scalar(0, 255, 0), 2, 8, 0);
                 }
-            }
-
-            if (hasNeighbor)
-            {
-                pairedLightBars.push_back(lightBars[j]);
+                cv::circle(imt_test, lightBar.center, 2, cv::Scalar(255, 0, 0), 2, 8, 0);
             }
         }
-        lightBars = pairedLightBars;
-
-        for (const LightBar& lightBar : lightBars)
-        {
+        /********************
+        
             for(int m = 0; m < 4; m++)
             {
                 cv::line(
