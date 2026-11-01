@@ -22,10 +22,24 @@ struct LightBar
 
 int main(void)
 {
-    cv::Mat img, hsv, gauss, blue, open, dila;
+    cv::Mat img, gauss, hsv, binary, open, img_test;
     cv::Mat imt_test;
 
     int i = FIRSTPHOTO;
+
+    // cv::namedWindow("Trackbars", cv::WINDOW_AUTOSIZE);
+    // cv::createTrackbar("H Min", "Trackbars", nullptr, 255);
+    // cv::setTrackbarPos("H Min", "Trackbars", 75);
+    // cv::createTrackbar("H Max", "Trackbars", nullptr, 255);
+    // cv::setTrackbarPos("H Max", "Trackbars", 110);
+    // cv::createTrackbar("S Min", "Trackbars", nullptr, 255);
+    // cv::setTrackbarPos("S Min", "Trackbars", 50);
+    // cv::createTrackbar("S Max", "Trackbars", nullptr, 255);
+    // cv::setTrackbarPos("S Max", "Trackbars", 255);
+    // cv::createTrackbar("V Min", "Trackbars", nullptr, 255);
+    // cv::setTrackbarPos("V Min", "Trackbars", 70);
+    // cv::createTrackbar("V Max", "Trackbars", nullptr, 255);
+    // cv::setTrackbarPos("V Max", "Trackbars", 255);
 
     while (1)
     {
@@ -38,25 +52,45 @@ int main(void)
             break;
         }
 
+        // int h_min = cv::getTrackbarPos("H Min", "Trackbars");
+        // int h_max = cv::getTrackbarPos("H Max", "Trackbars");
+        // int s_min = cv::getTrackbarPos("S Min", "Trackbars");
+        // int s_max = cv::getTrackbarPos("S Max", "Trackbars");
+        // int v_min = cv::getTrackbarPos("V Min", "Trackbars");
+        // int v_max = cv::getTrackbarPos("V Max", "Trackbars");
+
         std::vector<std::vector<cv::Point>> contours;
         std::vector<Vec4i> hierarchy;
 
         cv::GaussianBlur(img, gauss, cv::Size(7, 7), 0);
         cv::cvtColor(gauss, hsv, COLOR_BGR2HSV);
-        
-        /****
-        // cv::inRange(hsv, cv::Scalar(75, 50, 70), cv::Scalar(110, 255, 255), blue);
-        // cv::morphologyEx(blue, open, MORPH_OPEN, cv::getStructuringElement (cv::MORPH_RECT, cv:: Size (7, 7)));
-        // cv::dilate(open, dila, cv::getStructuringElement(0, cv::Size(3, 3)));
-        // cv::findContours(open, contours, 0, 2, cv::Point());
+        cv::inRange(hsv, cv::Scalar(75, 50, 70), cv::Scalar(110, 255, 255), binary);
+        cv::morphologyEx(binary, open, MORPH_OPEN, cv::getStructuringElement (cv::MORPH_RECT, cv:: Size (5, 5)));
+        cv::findContours(open, contours, 0, 2, cv::Point());
 
         img.copyTo(imt_test);
-        std::vector<LightBar> lightBars;
 
-        for(int j=0; j<contours.size(); j++)
+        for (int j=0 ; j<contours.size() ; j++)
         {
             cv::RotatedRect rect = cv::minAreaRect(contours[j]);
+            Point2f points[4];
+            rect.points(points);
+            Point2f cpt = rect.center;
 
+            for (int i=0 ; i<4 ; i++)
+            {
+                if (i==3)
+                {
+                    cv::line(imt_test, points[i], points[0], cv::Scalar(0, 255, 0), 2, 8, 0);
+                    break;
+                }
+                cv::line(imt_test, points[i], points[i+1], cv::Scalar(0, 255, 0), 2, 8, 0);
+            }
+            cv::circle(imt_test, cpt, 2, cv::Scalar(255, 0, 0), 2, 8, 0);
+        }
+        /********************
+        for(int j=0; j<contours.size(); j++)
+        {
             uint8_t flag = 0;
 
             //修正长宽判断
@@ -135,17 +169,16 @@ int main(void)
             cv::circle(imt_test, lightBar.center, 2, cv::Scalar(255, 0, 0), 2, 8, 0);
         }
 
-        ****/
+        ********************/
 
-        cv::imshow(std::to_string(i)+"yuan", img);
-        cv::imshow(std::to_string(i)+"gauss", gauss);
-        cv::imshow(std::to_string(i)+"hsv", hsv);
+        //cv::imshow("yuan", img);
+        //cv::imshow("gauss", gauss);
+        cv::imshow("hsv", hsv);
+        cv::imshow("binary", binary);
+        cv::imshow("open", open);
+        cv::imshow("轮廓", imt_test);
 
-        int num = cv::waitKey(0) & 0xFF;
-
-        cv::destroyWindow(std::to_string(i)+"yuan");
-        cv::destroyWindow(std::to_string(i)+"gauss");
-        cv::destroyWindow(std::to_string(i)+"hsv");
+        int num = cv::waitKey(30) & 0xFF;
 
         if (num == 'q' || num == 'Q' || num == 27) break;
         else if (num == '=') ++i;
