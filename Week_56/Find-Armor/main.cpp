@@ -7,7 +7,7 @@ using namespace std;
 using namespace cv;
 
 #define FIRSTPHOTO 1
-#define LASTPHOTO 30
+#define LASTPHOTO 40
 
 struct LightBar
 {
