@@ -16,9 +16,14 @@ RMtrain/
 	│
 	├── 4_OpenCV-Get-Start/			# OpenCV 入门程序
 	│
-	├── 5_Find-Armor/			# 开放题自瞄方向（已过时）
+	├── 5_Find-Armor/			# 开放题
 	│	
-	└── Find-Armor_2/		# 开放题自瞄方向第二版
+	└── Find-Armor_2/		# 开放题第二版
 	│	
-	└── Find-Armor_2_Video/		# 自瞄视频处理
+	└── Find-Armor_2_Video/		# 视频处理测试
+│	
+└── Week_56/		
+	├── note.md
+	│
+	├── 1_STL/				# 装甲板检测
 ```

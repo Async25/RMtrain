@@ -46,12 +46,12 @@ int main()
             for (int k = 0; k < 4; ++k)
             {
                 cv::line(img_test, bar.points[k], bar.points[(k + 1) % 4],
-                         cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
+                         cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
             }
             cv::circle(img_test, bar.center, 2, cv::Scalar(255, 0, 0), -1, cv::LINE_AA);
 
             const cv::Point2f end = bar.center + bar.direction * (bar.height * 0.5f);
-            cv::arrowedLine(img_test, bar.center, end, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
+            cv::arrowedLine(img_test, bar.center, end, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
         }
 
         cv::imshow("img", img);
