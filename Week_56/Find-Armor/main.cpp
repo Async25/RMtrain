@@ -1,10 +1,9 @@
 #include <opencv2/opencv.hpp>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
-
-using namespace std;
-using namespace cv;
 
 #define FIRSTPHOTO 1
 #define LASTPHOTO 40
@@ -14,114 +13,133 @@ struct LightBar
     cv::RotatedRect rect;
     cv::Point2f center;
     cv::Point2f points[4];
-    float width;
-    float height;
-    float ratio;
-    float area;
+    cv::Point2f direction; // 沿灯条长轴的单位方向向量
+    float width = 0.0f;    // 短边
+    float height = 0.0f;   // 长边
+    float ratio = 0.0f;
+    float area = 0.0f;
 };
 
-cv::Mat Prepare(cv::Mat image);
+std::vector<std::vector<cv::Point>> Img2Contours(const cv::Mat& image);
+std::vector<LightBar> Rect2Bars(const std::vector<std::vector<cv::Point>>& contours);
+cv::Point2f GetLongAxisDirection(const cv::RotatedRect& rect);
 
-int main(void)
+int main()
 {
-    cv::Mat img, img_test, bandh;
+    cv::Mat img, img_test;
 
-    int i = FIRSTPHOTO;
-
-    while (1)
+    for (int i = FIRSTPHOTO; i <= LASTPHOTO; )
     {
-        if (i < FIRSTPHOTO || i > LASTPHOTO) break;
-
         img = cv::imread(std::string(PROJECT_DIR) + "/photo/" + std::to_string(i) + ".jpg");
         if (img.empty())
         {
-            std::cerr << "Failed to load image: " << i << ".jpg" << std::endl;
+            std::cerr << "Failed to load image: " << i << ".jpg\n";
             break;
         }
-        
-        std::vector<std::vector<cv::Point>> contours;
 
-        bandh = Prepare(img);
-        cv::findContours(bandh, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+        const auto contours = Img2Contours(img);
+        const auto bars = Rect2Bars(contours);
 
-        img.copyTo(img_test);                   //用于叠加绘制结果
-
-        std::vector<cv::RotatedRect> Bars;      //存放经筛选的灯条
-
-        for (int j = 0; j < contours.size(); j++)
+        img.copyTo(img_test);
+        for (const auto& bar : bars)
         {
-            cv::RotatedRect rect = cv::minAreaRect(contours[j]);
-
-            float w = rect.size.width;
-            float h = rect.size.height;
-            if (w == 0 || h == 0 ) continue;                            //过滤异常矩形
-
-            float area = w * h;
-            if (area < 20 || area > 1800) continue;                     //面积过滤
-
-            uint8_t flag = 0;                                           //修正长宽判断
-            if (w > h)                                                 
-            {
-                flag = 1;
-                float temp = w;
-                w = h;
-                h = temp;
-            }
-
-            if (flag == 0 && rect.angle > 40) continue;                 //分两类进行倾角过滤
-            if (flag == 1 && rect.angle < 50) {flag = 0; continue;}
-
-            float ratio = h / w;                                        //修正后再计算长宽比
-            if (ratio < 1.1 || ratio > 20.0 ) continue;                 //长宽比过滤
-
-            LightBar lightBar;
-            lightBar.rect = rect;
-            lightBar.center = rect.center;
-            lightBar.width = w;
-            lightBar.height = h;
-            lightBar.ratio = ratio;
-            lightBar.area = area;
-            rect.points(lightBar.points);
-            Bars.push_back(rect);
-
-            // 绘制矩形
             for (int k = 0; k < 4; ++k)
             {
-                cv::line(img_test, lightBar.points[k], lightBar.points[(k+1)%4], cv::Scalar(0, 255, 0), 2, 8, 0);
+                cv::line(img_test, bar.points[k], bar.points[(k + 1) % 4],
+                         cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
             }
-            cv::circle(img_test, lightBar.center, 2, cv::Scalar(255, 0, 0), 2, 8, 0);
+            cv::circle(img_test, bar.center, 2, cv::Scalar(255, 0, 0), -1, cv::LINE_AA);
+
+            const cv::Point2f end = bar.center + bar.direction * (bar.height * 0.5f);
+            cv::arrowedLine(img_test, bar.center, end, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
         }
-	
-        //cv::imshow("yuan", img);
-        //cv::imshow("gauss", gauss);
-        //cv::imshow("gray", gray);
-        //cv::imshow("hsv", hsv);
-        //cv::imshow("hsv_blue", hsv_blue);
-        //cv::imshow("binary", binary);
-        cv::imshow("bandh", bandh);
+
+        cv::imshow("img", img);
         cv::imshow("img_test", img_test);
+        const int key = cv::waitKey(0) & 0xFF;
 
-        int num = cv::waitKey(30) & 0xFF;
-
-        if (num == 'q' || num == 'Q' || num == 27) break;
-        else if (num == '=') ++i;
-        else if (num == '-') --i;
+        if (key == 'q' || key == 'Q' || key == 27) break;
+        if (key == '=') ++i;
+        else if (key == '-' && i > FIRSTPHOTO) --i;
     }
     return 0;
 }
 
-cv::Mat Prepare(cv::Mat image)
+std::vector<std::vector<cv::Point>> Img2Contours(const cv::Mat& image)
 {
-    cv::Mat gauss, gray, binary, hsv, hsv_blue, binaryANDhsv;
+    cv::Mat gray, binary, hsv, hsv_blue, mask;
+    std::vector<std::vector<cv::Point>> contours;
 
-    cv::GaussianBlur(image, gauss, cv::Size(3, 3), 0);
-    cv::cvtColor(gauss, gray, cv::COLOR_BGR2GRAY);
-    cv::cvtColor(gauss, hsv, cv::COLOR_BGR2HSV);
+    cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(image, hsv, cv::COLOR_BGR2HSV);
     cv::inRange(hsv, cv::Scalar(75, 50, 70), cv::Scalar(110, 255, 255), hsv_blue);
     cv::threshold(gray, binary, 110, 255, cv::THRESH_BINARY);
-    cv::bitwise_and(binary, hsv_blue, binaryANDhsv);
+    cv::bitwise_and(binary, hsv_blue, mask);
+    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-    cv::imshow("gauss", gauss);
-    
-    return binaryANDhsv;
+    cv::imshow("mask", mask);
+    return contours;
+}
+
+std::vector<LightBar> Rect2Bars(const std::vector<std::vector<cv::Point>>& contours)
+{
+    std::vector<LightBar> bars;
+    bars.reserve(contours.size());
+
+    for (const auto& contour : contours)
+    {
+        const cv::RotatedRect rect = cv::minAreaRect(contour);
+        const float w = std::min(rect.size.width, rect.size.height);
+        const float h = std::max(rect.size.width, rect.size.height);
+        if (w <= 0.0f || h <= 0.0f) continue;
+
+        const float area = w * h;
+        if (area < 30.0f || area > 2800.0f) continue;
+
+        const float ratio = h / w;
+        if (ratio < 1.1f || ratio > 20.0f) continue;
+
+        LightBar bar;
+        bar.rect = rect;
+        bar.center = rect.center;
+        bar.width = w;
+        bar.height = h;
+        bar.ratio = ratio;
+        bar.area = area;
+        rect.points(bar.points);
+        bar.direction = GetLongAxisDirection(rect);
+        if (bar.direction.dot(bar.direction) < 0.5f) continue;
+
+        bars.push_back(bar);
+    }
+    return bars;
+}
+
+cv::Point2f GetLongAxisDirection(const cv::RotatedRect& rect)
+{
+    cv::Point2f points[4];
+    rect.points(points);
+
+    int longestEdge = 0;
+    float longestLengthSquared = -1.0f;
+    for (int i = 0; i < 4; ++i)
+    {
+        const cv::Point2f edge = points[(i + 1) % 4] - points[i];
+        const float lengthSquared = edge.dot(edge);
+        if (lengthSquared > longestLengthSquared)
+        {
+            longestLengthSquared = lengthSquared;
+            longestEdge = i;
+        }
+    }
+
+    cv::Point2f direction = points[(longestEdge + 1) % 4] - points[longestEdge];
+    const float length = std::sqrt(direction.dot(direction));
+    if (length < 1e-6f) return cv::Point2f(0.0f, 0.0f);
+
+    direction *= 1.0f / length;
+    if (direction.y < 0.0f || (std::abs(direction.y) < 1e-6f && direction.x < 0.0f))
+        direction *= -1.0f;
+
+    return direction;
 }
