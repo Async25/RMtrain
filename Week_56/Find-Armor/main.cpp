@@ -45,12 +45,18 @@ int main()
 
         std::vector<std::vector<cv::Point>> contours = Img2Contours(img);
         std::vector<LightBar> bars = Contours2Bars(contours);
+        std::vector<Armor> armor = Bars2Armor(bars);
 
         img.copyTo(img_test);
-
-        for (int j = 0; j < bars.size(); ++j)
+        
+        for (int m = 0 ; m < armor.size() ; ++m)
         {
-            for (int k = 0; k < 4; ++k)
+            cv::line(img_test, armor[m].left.center, armor[m].right.center, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
+        }
+
+        for (int j = 0 ; j < bars.size() ; ++j)
+        {
+            for (int k = 0 ; k < 4 ; ++k)
             {
                 cv::line(img_test, bars[j].points[k], bars[j].points[(k + 1) % 4],
                          cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
@@ -130,7 +136,7 @@ std::vector<Armor> Bars2Armor(std::vector<LightBar>& bars)
           });
 
     std::vector<Armor> armors;
-    armors.reserve(bars.size());
+    // armors.reserve(bars.size());
 
     for (size_t i = 0; i+1 < bars.size(); ++i)
     {
@@ -138,17 +144,28 @@ std::vector<Armor> Bars2Armor(std::vector<LightBar>& bars)
         {
             LightBar& left = bars[i];
             LightBar& right = bars[j];
-
-            float distance = right.center.x - left.center.x;                                // 间距
-            if (distance > 1500.0f || distance < 100.0f) continue;
-
+                               
+            float heightRatio = std::max(left.height, right.height) / std::min(left.height, right.height);	// 相对高度比例
+            
+            cv::Point2f connect = right.center - left.center;				    // 相对比例间距
+	    float centerDistance = std::sqrt(connect.dot(connect));
+	    float meanHeight = 0.5f * (left.height + right.height);
+	    float normalizedDistance = centerDistance / meanHeight;
+	                
+            float verticalOffset = std::abs(left.center.y - right.center.y) / meanHeight;   // 绝对高度差
+            
             float parallelError = 1.0f - std::abs(left.direction.dot(right.direction));     // 平行度 ->0
-            if (parallelError > 0.3f) continue;
-
-            cv::Point2f connect = right.center - left.center;                               // 中心连线垂直 ->0
-            connect *= 1.0f / std::sqrt(connect.dot(connect));
+            
+            connect *= 1.0f / std::sqrt(connect.dot(connect));				    // 中心连线垂直 ->0
             float perpendicularError = std::abs(connect.dot(left.direction));  
-            if (perpendicularError > 0.5f) continue;
+            
+            bool if1 = (heightRatio > 1.4) ? true : false;	    
+	    bool if2 = (normalizedDistance > 5.0f || normalizedDistance < 0.4f) ? true : false;
+            bool if3 = (verticalOffset > 400) ? true : false;           
+            bool if4 = (parallelError > 0.15f) ? true : false;            
+            bool if5 = (perpendicularError > 0.35f) ? true : false;
+            
+            if (if1 || if2 || if3 || if4 || if5) continue;
 
             armors.push_back({left, right});
         }
@@ -163,7 +180,7 @@ cv::Point2f GetLongAxisDirection(cv::RotatedRect& rect)
 
     int longestEdge = 0;
     float longestLengthSquared = -1.0f;
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0 ; i < 4 ; ++i)
     {
         cv::Point2f edge = points[(i + 1) % 4] - points[i];
         float lengthSquared = edge.dot(edge);
