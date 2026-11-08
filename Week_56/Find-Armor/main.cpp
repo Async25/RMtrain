@@ -86,7 +86,7 @@ int main()
                             cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
         }
 
-        //cv::imshow("img", img);
+        cv::imshow("img", img);
         cv::imshow("img_test", img_test);
 
         int key = cv::waitKey(0) & 0xFF;
@@ -109,7 +109,7 @@ std::vector<std::vector<cv::Point>> Img2Contours(cv::Mat& image)
     cv::bitwise_and(binary, hsv_blue, mask);
     cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-    //cv::imshow("mask", mask);
+    cv::imshow("mask", mask);
     return contours;
 }
 

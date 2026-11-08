@@ -1,0 +1,8 @@
+﻿path: F:/armor_dataset_yolo
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: armor_blue
+  1: armor_red
