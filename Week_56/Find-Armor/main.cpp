@@ -158,7 +158,7 @@ std::vector<Armor> Bars2Armor(std::vector<LightBar>& bars)
 
     const float maxHeightRatio = 1.4f;
     const float minDistanceRatio = 0.4f;
-    const float maxDistanceRatio = 3.5f;
+    const float maxDistanceRatio = 5.0f;
     const float maxVerticalOffset = 0.8f;
     const float maxParallelError = 0.15f;
     const float maxPerpendicularError = 0.35f;
