@@ -46,7 +46,7 @@ int main()
         return -1;
     }
 
-    const double frameDurationMs = 1000.0 / 3.0;
+    const double frameDurationMs = 1000.0 / 30.0;
     cv::namedWindow("img_test", cv::WINDOW_NORMAL);
 
     while (video.read(img) && !img.empty())
@@ -64,22 +64,23 @@ int main()
             DrawArmorQuadrilateral(img_test, armor);
         }
 
-        for (const auto& bar : bars)
-        {
-            for (int k = 0; k < 4; ++k)
-            {
-                cv::line(img_test, bar.points[k], bar.points[(k + 1) % 4],
-                         cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
-            }
+        // for (const auto& bar : bars)
+        // {
+        //     for (int k = 0; k < 4; ++k)
+        //     {
+        //         cv::line(img_test, bar.points[k], bar.points[(k + 1) % 4],
+        //                  cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
+        //     }
 
-            cv::Point2f end = bar.center + bar.direction * (bar.height * 0.5f);
-            cv::arrowedLine(img_test, bar.center, end,
-                            cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
-        }
+        //     cv::Point2f end = bar.center + bar.direction * (bar.height * 0.5f);
+        //     cv::arrowedLine(img_test, bar.center, end,
+        //                     cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
+        // }
+        const double elapsedMs = (cv::getTickCount() - startTick) * 1000.0 / cv::getTickFrequency();
+        const double fps = 1000.0 / elapsedMs;
+        std::cout << " fps: " << fps << std::endl;
 
         cv::imshow("img_test", img_test);
-
-        const double elapsedMs = (cv::getTickCount() - startTick) * 1000.0 / cv::getTickFrequency();
         const int delayMs = std::max(1, static_cast<int>(std::ceil(frameDurationMs - elapsedMs)));
         const int key = cv::waitKey(delayMs) & 0xFF;
         if (key == 'q' || key == 'Q' || key == 27) break;
@@ -118,6 +119,9 @@ std::vector<LightBar> Contours2Bars(std::vector<std::vector<cv::Point>>& contour
         float w = std::min(rect.size.width, rect.size.height);
         float h = std::max(rect.size.width, rect.size.height);
         if (w <= 0.0f || h <= 0.0f) continue;
+
+        if (rect.size.width < rect.size.height && rect.angle > 30.0f) continue;
+        if (rect.size.width > rect.size.height && rect.angle < 60.0f) continue;
 
         float area = w * h;
         if (area < 30.0f || area > 2400.0f) continue;
@@ -280,11 +284,10 @@ void DrawArmorQuadrilateral(cv::Mat& image, const Armor& armor)
     if (!GetArmorCorners(armor, corners))
         return;
 
-    const cv::Scalar armorColor(0, 0, 255);
     for (int i = 0; i < 4; ++i)
     {
         cv::line(image, corners[i], corners[(i + 1) % 4],
-                 armorColor, 2, cv::LINE_AA);
+                 cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
     }
 }
 
