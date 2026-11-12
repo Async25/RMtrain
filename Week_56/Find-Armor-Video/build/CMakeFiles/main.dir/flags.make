@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = -DPROJECT_DIR=\"/home/async25/Desktop/RMtrain/Week_56/Find-Armor-Video\"
 
-CXX_INCLUDES = -isystem /usr/local/include/opencv4
+CXX_INCLUDES = -isystem /usr/local/opencv-4.10.0/include/opencv4
 
 CXX_FLAGS = 
 
